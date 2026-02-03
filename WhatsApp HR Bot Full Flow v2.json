@@ -1,0 +1,1069 @@
+{
+  "name": "WhatsApp HR Bot Full Flow v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-hr-bot",
+        "options": {}
+      },
+      "id": "63f573b0-757e-4504-b0f8-606bbc33ad20",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        128
+      ],
+      "webhookId": "87532317-73eb-42bf-8518-cdfb08e1e3fc"
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  json: {\n    reply: \"✅ Welcome! Please choose:\\n1. Apply for a job\\n2. Check application status\",\n    chat_id: $json[\"chat_id\"]   // <-- forward chat_id to next nodes\n  }\n}];"
+      },
+      "id": "920f1c2f-a3cf-459f-a7d0-cf26ed338212",
+      "name": "Menu Function",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{$json[\"reply\"]}}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "b3a66c3e-5f05-4638-992b-f0e7018f2962",
+      "name": "Respond Menu",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const jobs = items.map(row => `${row.json.JobID} - ${row.json.JobTitle}`);\nreturn [{ json: { reply: \"?? Available jobs:\\n\" + jobs.join(\"\\n\") + \"\\n\\nPlease enter the Job ID for details.\" } }];"
+      },
+      "id": "1603fef4-63c9-4ecb-89e1-2b90bd419b0d",
+      "name": "Format Jobs",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        608,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{$json[\"reply\"]}}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "bf54ab90-4707-43d0-b5b5-5c1e9cc858f1",
+      "name": "Respond Jobs",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const jobId = $json[\"message_lc\"].startsWith('apply') ? $json[\"body\"][\"text\"].split(' ')[1] : $json[\"body\"][\"text\"];\nconst job = items.map(i => i.json).find(j => j.JobID === jobId);\nif (!job) return [{ json: { reply: `? No job found with ID ${jobId}. Reply 'menu' to see options.` } }];\nreturn [{ json: { reply: `?? Job Details\\nID: ${job.JobID}\\nJobTitle: ${job.JobTitle}\\nJobDescription: ${job.JobDescription}\\n\\nReply 'apply ${job.JobID}' to apply or 'menu' to return.` } }];"
+      },
+      "id": "2ff8e6d0-423c-49e7-9392-de6b179d289b",
+      "name": "Format Job Details",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        864,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{$json[\"reply\"]}}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "028926fe-2f9e-4f16-a4b1-54d4e7e96db2",
+      "name": "Respond Job Details",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const text = $json[\"body\"][\"text\"];\nconst parts = text.trim().split(' ');\nif (parts.length >= 2 && parts[0].toLowerCase() === 'apply') {\n  return [{ json: { jobId: parts[1] } }];\n}\nreturn [{ json: {} }];"
+      },
+      "id": "0b57c7ee-07a1-42e4-affe-1719cbbb9f50",
+      "name": "Extract Apply JobID",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        624,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const appId = `APP-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(Math.random()*9000+1000)}`;\nreturn [{ json: { ApplicationID: appId, reply: `? Application received! Your Application ID is ${appId}.` } }];"
+      },
+      "id": "c17ea00d-0006-44a7-8bec-542994eaaa36",
+      "name": "Generate Application ID",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{$json[\"reply\"]}}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "67c71fb1-31d4-4899-b8ec-44dcc22586a3",
+      "name": "Respond Application",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const appId = $json[\"body\"][\"text\"].trim();\nconst apps = items.map(i => i.json);\nconst app = apps.find(a => a.ApplicationID === appId);\nif (!app) {\n  return [{ json: { reply: `? No application found for ID ${appId}.` } }];\n}\nreturn [{ json: { reply: `?? Status for ${app.ApplicationID}: ${app.Status}` } }];"
+      },
+      "id": "45f7dbef-d260-4225-b610-beaa5c21aa6a",
+      "name": "Format Application Status",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        976,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{$json[\"reply\"]}}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "dbeba473-8646-41b8-be1c-11d92149f289",
+      "name": "Respond Application Status",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        864
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "43094cf3-75bd-40c0-8fed-3eb3b4bd6628",
+              "name": "message",
+              "value": "={{ $json[\"body\"][\"message\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "76d484af-3cea-4016-9659-def046428772",
+              "name": "from",
+              "value": "={{ $json[\"body\"][\"sender\"][\"attendee_name\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "7e08ca96-1dea-4e6b-8e05-276757411989",
+              "name": "chat_id",
+              "value": "={{ $json[\"body\"][\"chat_id\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "69031bb6-8a03-4e3e-97e7-0f094dfbfbc7",
+              "name": "attachments",
+              "value": "={{ $json[\"body\"][\"attachments\"] }}",
+              "type": "array"
+            },
+            {
+              "id": "d8b56210-54ca-4e09-8cba-0538c093d051",
+              "name": "message_lc",
+              "value": "={{ ($json[\"body\"][\"message\"] || \"\").toString().trim().toLowerCase() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -896,
+        128
+      ],
+      "id": "05c5a4be-0ddf-4074-ab7e-9633219f6382",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json[\"message_lc\"]}}",
+                    "rightValue": "hi",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "630e999e-8825-406e-8f85-7bc610f906e1"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "69d8a71e-1cbd-4e88-b7ba-7b8d8f242f5f",
+                    "leftValue": "={{$json[\"message_lc\"]}}",
+                    "rightValue": "1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e3ca7d32-a8c4-448d-92a6-6409173e9be2",
+                    "leftValue": "={{$json[\"message_lc\"]}}",
+                    "rightValue": "2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5a0e8a77-9f2f-4d5b-a210-3f016b198b76",
+                    "leftValue": "={{$json[\"message_lc\"]}}",
+                    "rightValue": "^apply\\s+\\d+$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b48c0e4a-f8f0-44dc-b2d9-863ae9716ad9",
+                    "leftValue": "={{$json[\"message_lc\"]}}",
+                    "rightValue": "^\\d+$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -496,
+        320
+      ],
+      "id": "75a80a18-5f43-48cd-83bd-85c55d42bd21",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "fileName": "=CVs/CV_{{$json[\"from\"]}}_{{$now}}.pdf",
+        "parentId": "=",
+        "fileContent": "={{$json[\"attachments\"][0].data}}"
+      },
+      "type": "n8n-nodes-base.microsoftOneDrive",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        624
+      ],
+      "id": "fd7975f3-ec2a-4bd0-b28f-744811fd952c",
+      "name": "Upload CV to OneDrive",
+      "credentials": {
+        "microsoftOneDriveOAuth2Api": {
+          "id": "3NKcSJrtA7upUMEn",
+          "name": "Microsoft Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "worksheet",
+        "operation": "readRows",
+        "workbook": {
+          "__rl": true,
+          "value": "EBFCF2CF283C9DFB!se31cd6d5080944559dc31879b5fab46e",
+          "mode": "list",
+          "cachedResultName": "Hrbot",
+          "cachedResultUrl": "https://onedrive.live.com/personal/ebfcf2cf283c9dfb/_layouts/15/doc.aspx?resid=e31cd6d5-0809-4455-9dc3-1879b5fab46e&cid=ebfcf2cf283c9dfb"
+        },
+        "worksheet": {
+          "__rl": true,
+          "value": "{00000000-0001-0000-0000-000000000000}",
+          "mode": "list",
+          "cachedResultName": "Jobs",
+          "cachedResultUrl": "https://onedrive.live.com/personal/ebfcf2cf283c9dfb/_layouts/15/doc.aspx?resid=e31cd6d5-0809-4455-9dc3-1879b5fab46e&cid=ebfcf2cf283c9dfb&activeCell=Jobs!A1"
+        },
+        "options": {
+          "rawData": true
+        }
+      },
+      "type": "n8n-nodes-base.microsoftExcel",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        144
+      ],
+      "id": "6c7ef418-f9ca-48bd-8d55-e8e4bcbc6e1a",
+      "name": "Excel Get Jobs",
+      "credentials": {
+        "microsoftExcelOAuth2Api": {
+          "id": "svaRsc4aQtyxCdS2",
+          "name": "Microsoft Excel account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "worksheet",
+        "operation": "readRows",
+        "workbook": {
+          "__rl": true,
+          "value": "EBFCF2CF283C9DFB!se31cd6d5080944559dc31879b5fab46e",
+          "mode": "list",
+          "cachedResultName": "Hrbot",
+          "cachedResultUrl": "https://onedrive.live.com/personal/ebfcf2cf283c9dfb/_layouts/15/doc.aspx?resid=e31cd6d5-0809-4455-9dc3-1879b5fab46e&cid=ebfcf2cf283c9dfb"
+        },
+        "worksheet": {
+          "__rl": true,
+          "value": "{00000000-0001-0000-0000-000000000000}",
+          "mode": "list",
+          "cachedResultName": "Jobs",
+          "cachedResultUrl": "https://onedrive.live.com/personal/ebfcf2cf283c9dfb/_layouts/15/doc.aspx?resid=e31cd6d5-0809-4455-9dc3-1879b5fab46e&cid=ebfcf2cf283c9dfb&activeCell=Jobs!A1"
+        },
+        "options": {
+          "rawData": true
+        }
+      },
+      "type": "n8n-nodes-base.microsoftExcel",
+      "typeVersion": 2.1,
+      "position": [
+        496,
+        400
+      ],
+      "id": "946942f5-6eac-4269-8f50-e1bc3fe28c4a",
+      "name": "Excel Get Job Details",
+      "credentials": {
+        "microsoftExcelOAuth2Api": {
+          "id": "svaRsc4aQtyxCdS2",
+          "name": "Microsoft Excel account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "worksheet",
+        "operation": "append",
+        "workbook": {
+          "__rl": true,
+          "value": "EBFCF2CF283C9DFB!se31cd6d5080944559dc31879b5fab46e",
+          "mode": "list",
+          "cachedResultName": "Hrbot",
+          "cachedResultUrl": "https://onedrive.live.com/personal/ebfcf2cf283c9dfb/_layouts/15/doc.aspx?resid=e31cd6d5-0809-4455-9dc3-1879b5fab46e&cid=ebfcf2cf283c9dfb"
+        },
+        "worksheet": {
+          "__rl": true,
+          "value": "{00000000-0001-0000-0100-000000000000}",
+          "mode": "list",
+          "cachedResultName": "Applications",
+          "cachedResultUrl": "https://onedrive.live.com/personal/ebfcf2cf283c9dfb/_layouts/15/doc.aspx?resid=e31cd6d5-0809-4455-9dc3-1879b5fab46e&cid=ebfcf2cf283c9dfb&activeCell=Applications!A1"
+        },
+        "fieldsUi": {
+          "values": [
+            {
+              "column": "ApplicationID",
+              "fieldValue": "=={{ $json[\"ApplicationID\"] }}"
+            },
+            {
+              "column": "Name",
+              "fieldValue": "={{$node[\"Wait for Name Input\"].json[\"body\"][\"text\"] || $node[\"Wait for Name Input\"].json[\"text\"] || \"\"}}"
+            },
+            {
+              "column": "Phone",
+              "fieldValue": "=={{ $json[\"from\"] }}"
+            },
+            {
+              "column": "JobID",
+              "fieldValue": "=={{ $json[\"jobId\"] }}"
+            },
+            {
+              "column": "CV",
+              "fieldValue": "=={{ $json[\"cvLink\"] }}"
+            },
+            {
+              "column": "Status",
+              "fieldValue": "=Screening"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftExcel",
+      "typeVersion": 2.1,
+      "position": [
+        2144,
+        624
+      ],
+      "id": "11cdafbc-0ceb-484d-8b0d-dade5cde89cd",
+      "name": "Append data to sheet",
+      "credentials": {
+        "microsoftExcelOAuth2Api": {
+          "id": "svaRsc4aQtyxCdS2",
+          "name": "Microsoft Excel account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "worksheet",
+        "operation": "readRows",
+        "workbook": {
+          "__rl": true,
+          "value": "EBFCF2CF283C9DFB!se31cd6d5080944559dc31879b5fab46e",
+          "mode": "list",
+          "cachedResultName": "Hrbot",
+          "cachedResultUrl": "https://onedrive.live.com/personal/ebfcf2cf283c9dfb/_layouts/15/doc.aspx?resid=e31cd6d5-0809-4455-9dc3-1879b5fab46e&cid=ebfcf2cf283c9dfb"
+        },
+        "worksheet": {
+          "__rl": true,
+          "value": "{00000000-0001-0000-0100-000000000000}",
+          "mode": "list",
+          "cachedResultName": "Applications",
+          "cachedResultUrl": "https://onedrive.live.com/personal/ebfcf2cf283c9dfb/_layouts/15/doc.aspx?resid=e31cd6d5-0809-4455-9dc3-1879b5fab46e&cid=ebfcf2cf283c9dfb&activeCell=Applications!A1"
+        },
+        "options": {
+          "rawData": true
+        }
+      },
+      "type": "n8n-nodes-base.microsoftExcel",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        864
+      ],
+      "id": "b23e09d3-a7e0-47d6-8bc6-f09ac17e8ca8",
+      "name": "Excel Get Application Status",
+      "credentials": {
+        "microsoftExcelOAuth2Api": {
+          "id": "svaRsc4aQtyxCdS2",
+          "name": "Microsoft Excel account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Please enter your *first name and last name*.",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1040,
+        624
+      ],
+      "id": "81b2a4e2-193c-4f4c-a5c2-7133878e4ef5",
+      "name": "Ask Name"
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "responseMode": "lastNode",
+        "options": {
+          "ignoreBots": true
+        }
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1264,
+        624
+      ],
+      "id": "ceb6ee34-8350-46f8-a38f-7980df22017a",
+      "name": "Wait for Name Input",
+      "webhookId": "268a6eb1-bc30-40cb-8938-69da4b1b6a97"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.unipile.com/v1/messages/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"account_id\": \"LpCVuwGIRmem8V9NA5YwQQ\",\n  \"conversation_id\": $json[\"chat_id\"],\n  \"text\": $json[\"reply\"],\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        816,
+        144
+      ],
+      "id": "8e2ca574-64a0-4d68-8b4e-d160e679fb9d",
+      "name": "Send Jobs Reply",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "hINK7gWszqJjVF4Q",
+          "name": "WhatsApp account"
+        },
+        "httpHeaderAuth": {
+          "id": "6wIe0y4144IFmJvK",
+          "name": "Unipile Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.unipile.com/v1/messages/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"account_id\": \"LpCVuwGIRmem8V9NA5YwQQ\",\n  \"conversation_id\": $json[\"chat_id\"],\n  \"text\": $json[\"reply\"],\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1072,
+        400
+      ],
+      "id": "139e0d16-f64e-464f-b37b-b97574c726f9",
+      "name": "Send Job Details Reply",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "hINK7gWszqJjVF4Q",
+          "name": "WhatsApp account"
+        },
+        "httpHeaderAuth": {
+          "id": "6wIe0y4144IFmJvK",
+          "name": "Unipile Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.unipile.com/v1/messages/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"account_id\": \"LpCVuwGIRmem8V9NA5YwQQ\",\n  \"conversation_id\": $json[\"chat_id\"],\n  \"text\": $json[\"reply\"],\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        624
+      ],
+      "id": "b839b1b6-d5cd-4535-9e55-f4b09fe09ae1",
+      "name": "Ask Name Reply",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "hINK7gWszqJjVF4Q",
+          "name": "WhatsApp account"
+        },
+        "httpHeaderAuth": {
+          "id": "6wIe0y4144IFmJvK",
+          "name": "Unipile Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.unipile.com/v1/messages/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"account_id\": \"LpCVuwGIRmem8V9NA5YwQQ\",\n  \"conversation_id\": $json[\"chat_id\"],\n  \"text\": $json[\"reply\"],\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2352,
+        624
+      ],
+      "id": "81956160-a896-4f4a-a569-81d9bfa8ce27",
+      "name": "Send Application Reply",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "hINK7gWszqJjVF4Q",
+          "name": "WhatsApp account"
+        },
+        "httpHeaderAuth": {
+          "id": "6wIe0y4144IFmJvK",
+          "name": "Unipile Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.unipile.com/v1/messages/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"account_id\": \"LpCVuwGIRmem8V9NA5YwQQ\",\n  \"conversation_id\": $json[\"chat_id\"],\n  \"text\": $json[\"reply\"],\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1184,
+        864
+      ],
+      "id": "e7c34ce1-eab1-4231-a6d9-17e2c88d159d",
+      "name": "Send Application Status Reply",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "hINK7gWszqJjVF4Q",
+          "name": "WhatsApp account"
+        },
+        "httpHeaderAuth": {
+          "id": "6wIe0y4144IFmJvK",
+          "name": "Unipile Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api14.unipile.com:14404/api/v1/messages/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "account_id",
+              "value": "LpCVuwGIRmem8V9NA5YwQQ"
+            },
+            {
+              "name": "conversation_id",
+              "value": "={{ $json[\"chat_id\"] }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json[\"reply\"] }}"
+            },
+            {
+              "name": "type",
+              "value": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        912,
+        -64
+      ],
+      "id": "b8835be0-fd15-4333-afb7-dfc870f52e78",
+      "name": "Send Menu Reply",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "oNunOelHxSUm4O1z",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Menu Function": {
+      "main": [
+        [
+          {
+            "node": "Send Menu Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Jobs": {
+      "main": [
+        [
+          {
+            "node": "Send Jobs Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Job Details": {
+      "main": [
+        [
+          {
+            "node": "Send Job Details Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Application ID": {
+      "main": [
+        [
+          {
+            "node": "Append data to sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Application Status": {
+      "main": [
+        [
+          {
+            "node": "Send Application Status Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Menu Function",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Excel Get Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Excel Get Application Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Apply JobID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Excel Get Job Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Apply JobID": {
+      "main": [
+        [
+          {
+            "node": "Ask Name Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload CV to OneDrive": {
+      "main": [
+        [
+          {
+            "node": "Generate Application ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Excel Get Jobs": {
+      "main": [
+        [
+          {
+            "node": "Format Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Excel Get Job Details": {
+      "main": [
+        [
+          {
+            "node": "Format Job Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append data to sheet": {
+      "main": [
+        [
+          {
+            "node": "Send Application Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Excel Get Application Status": {
+      "main": [
+        [
+          {
+            "node": "Format Application Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Name": {
+      "main": [
+        [
+          {
+            "node": "Wait for Name Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Name Input": {
+      "main": [
+        [
+          {
+            "node": "Upload CV to OneDrive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Jobs Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Job Details Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond Job Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Name Reply": {
+      "main": [
+        [
+          {
+            "node": "Ask Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Application Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond Application",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Application Status Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond Application Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Menu Reply": {
+      "main": [
+        [
+          {
+            "node": "Respond Menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "08b755a1-2590-43f8-859b-ad7254bc204a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1654a4d227a2bfc7ceb76bccc497af980eabafbed00a53f43bcf29418c3c1876"
+  },
+  "id": "5twD0aOlZyqHehzN",
+  "tags": []
+}
