@@ -50,5 +50,3 @@ The bot integrates WhatsApp (via Unipile API), Microsoft Excel, and OneDrive to 
    - User enters Application ID
    - Bot retrieves application status from Excel
    - Status is sent to the user
-
----
